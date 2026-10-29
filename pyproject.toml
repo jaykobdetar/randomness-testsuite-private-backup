@@ -1,0 +1,24 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "randomness-testsuite"
+version = "2.0.0"
+description = "Scientific diagnostics of binary sequences with explicit applicability and reproducible reports"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = ["numpy>=1.24", "scipy>=1.10"]
+
+[project.optional-dependencies]
+test = ["pytest>=7"]
+
+[project.scripts]
+randomness-suite = "randomness_cli:main"
+
+[tool.setuptools]
+py-modules = ["ApproximateEntropy", "BinaryMatrix", "BitInput", "Complexity", "CumulativeSum", "FrequencyTest", "GUI", "Main", "Matrix", "RandomExcursions", "RunTest", "Serial", "Spectral", "Suite", "TemplateMatching", "Tools", "Universal", "Validation", "randomness_cli"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
