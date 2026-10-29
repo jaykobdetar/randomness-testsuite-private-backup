@@ -19,6 +19,21 @@ REPOSITORY = Path(__file__).resolve().parents[1]
 BALANCED = "01" * 50
 
 
+@pytest.mark.parametrize("pattern", ["0", "1", "01", "0011"])
+def test_full_profile_handles_million_bit_degenerate_sequences(pattern):
+    bits = pattern * (1000000 // len(pattern))
+    results = {row["test_id"]: row for row in Suite.run_suite(bits)["results"]}
+    assert all(row["status"] != "error" for row in results.values())
+    if len(pattern) == 1:
+        assert results["frequency"]["decisions"] == {"p": "reject"}
+        assert results["runs"]["status"] == "not_applicable"
+        assert results["random_excursions"]["status"] == "not_applicable"
+    else:
+        assert results["frequency"]["p_values"] == {"p": 1.0}
+        assert results["spectral"]["decisions"] == {"p": "reject"}
+    assert results["linear_complexity"]["decisions"] == {"p": "reject"}
+
+
 def test_short_sequences_are_not_applicable_without_invented_p_values():
     report = Suite.run_suite("0101")
     assert len(report["results"]) == len(Suite.TEST_NAMES)
@@ -213,6 +228,30 @@ def test_second_level_alpha_boundary_interval_and_exact_binomial_extreme():
     assert result["nist_three_sigma_interval"] == pytest.approx([0.95 - radius, 1.0])
     all_rejected = Suite.summarize_p_values([0.0] * 10, alpha=0.05)
     assert all_rejected["excess_rejections_binomial_p"] == pytest.approx(0.05 ** 10, rel=1e-14)
+
+
+def test_second_level_decimal_boundaries_follow_nist_integer_bins():
+    values = [0, .1, .2, .3, .4, .5, .6, .7, .8, .9, 1] * 5
+    result = Suite.summarize_p_values(values)
+    assert result["uniformity_histogram"] == [5] * 9 + [10]
+    # Chi-square = 9*(5-5.5)^2/5.5 + (10-5.5)^2/5.5 = 45/11.
+    from scipy.special import gammaincc
+    assert result["uniformity_p"] == pytest.approx(gammaincc(4.5, 45 / 22))
+
+
+@pytest.mark.parametrize("alias", ["same", "symlink", "hardlink"])
+def test_cli_does_not_destroy_source_when_output_aliases_input(tmp_path, alias):
+    source = tmp_path / "bits.txt"
+    source.write_text(BALANCED)
+    output = source if alias == "same" else tmp_path / "report.json"
+    if alias == "symlink":
+        output.symlink_to(source)
+    elif alias == "hardlink":
+        output.hardlink_to(source)
+    completed = _cli(str(source), "--output", str(output), "--tests", "frequency")
+    assert completed.returncode == 2
+    assert "must not overwrite" in completed.stderr
+    assert source.read_text() == BALANCED
 
 
 @pytest.mark.parametrize("p_values", [[], [-0.01], [1.01], [float("nan")], [float("inf")], [[0.1, 0.2]]])

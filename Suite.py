@@ -30,7 +30,7 @@ from TemplateMatching import TemplateMatching
 from Universal import Universal
 from Validation import InsufficientDataError, validate_bits
 
-VERSION = "2.0.0"
+VERSION = "2.0.1.dev0"
 INTERPRETATION = (
     "The null model is independent, equally probable bits. A p-value is not the "
     "probability that the source is random. Non-rejection does not prove physical "
@@ -260,7 +260,9 @@ def summarize_p_values(p_values, alpha=0.01):
     passes = int(np.count_nonzero(values >= alpha))
     radius = 3 * math.sqrt(alpha * (1 - alpha) / count)
     interval = [max(0.0, 1 - alpha - radius), min(1.0, 1 - alpha + radius)]
-    histogram = np.histogram(values, bins=np.linspace(0, 1, 11))[0]
+    # STS uses floor(10*p), with p=1 assigned to the final cell. linspace
+    # edges can round upward (e.g. 0.3), misclassifying exact decimal inputs.
+    histogram = np.bincount(np.minimum((10 * values).astype(int), 9), minlength=10)
     uniformity = None
     if count >= 55:
         chi2 = float(np.sum((histogram - count / 10) ** 2 / (count / 10)))

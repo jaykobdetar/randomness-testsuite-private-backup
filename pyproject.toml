@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "randomness-testsuite"
-version = "2.0.0"
+version = "2.0.1.dev0"
 description = "Scientific diagnostics of binary sequences with explicit applicability and reproducible reports"
 readme = "README.md"
 requires-python = ">=3.10"

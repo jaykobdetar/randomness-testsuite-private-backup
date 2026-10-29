@@ -27,6 +27,10 @@ def main(argv=None):
     if args.bits is not None and args.format != "ascii":
         parser.error("--format bytes applies only to file input")
     try:
+        if args.file is not None and args.output is not None:
+            if (args.file.resolve() == args.output.resolve()
+                    or (args.output.exists() and args.file.samefile(args.output))):
+                parser.error("output must not overwrite the input file")
         if args.file is not None:
             bits, source = read_bits(args.file, args.format)
         else:
