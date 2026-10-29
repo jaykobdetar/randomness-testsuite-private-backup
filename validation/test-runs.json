@@ -1,0 +1,38 @@
+{
+  "candidate_version": "2.0.1.dev0",
+  "base_commit": "9681a825b2b6d8318d9e6627232d652833d97712",
+  "thread_environment": {
+    "OPENBLAS_NUM_THREADS": "1",
+    "OMP_NUM_THREADS": "1"
+  },
+  "runs": [
+    {
+      "python": "3.12.3",
+      "command": "xvfb-run -a python -m pytest -q",
+      "result": "311 passed in 26.65s"
+    },
+    {
+      "python": "3.14.7",
+      "command": "python -m pytest -q",
+      "result": "308 passed, 1 skipped in 23.65s"
+    },
+    {
+      "python": "3.14.7",
+      "context": "extracted source distribution outside checkout",
+      "command": "python -m pytest -q",
+      "result": "308 passed, 1 skipped in 23.18s"
+    }
+  ],
+  "wheel_smoke": "Fresh environment; site-packages import, installed CLI JSON, report and distribution versions verified outside checkout",
+  "dependencies": {
+    "numpy": "2.5.4",
+    "scipy": "1.18.1",
+    "pytest": "9.2.0"
+  },
+  "unverified": [
+    "Python 3.10/3.11/3.13",
+    "minimum dependency versions",
+    "Windows/macOS",
+    "remote CI"
+  ]
+}

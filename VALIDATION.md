@@ -49,6 +49,7 @@ Final candidate `2.0.1.dev0` checks:
 | --- | --- |
 | Python 3.12.3, `xvfb-run -a python -m pytest -q` | 311 passed in 26.65 s, no skips |
 | Python 3.14.7, `python -m pytest -q` | 308 passed, 1 skipped Tk module in 23.65 s |
+| Extracted 2.0.1.dev0 source archive, Python 3.14.7 | 308 passed, 1 skipped Tk module in 23.18 s |
 | `python -m build --no-isolation` | Source archive and wheel built successfully |
 | Fresh wheel environment, working directory outside checkout | site-packages import, installed CLI JSON and 2.0.1.dev0 metadata/report version verified |
 
