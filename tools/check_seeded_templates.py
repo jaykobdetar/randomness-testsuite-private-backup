@@ -17,6 +17,9 @@ from TemplateMatching import TemplateMatching
 
 def compare_p_values(actual, expected, tolerance=5.1e-7):
     """Validate both vectors before computing any tolerance comparisons."""
+    if (isinstance(tolerance, bool) or not isinstance(tolerance, (int, float))
+            or not math.isfinite(tolerance) or tolerance < 0):
+        raise ValueError("tolerance must be a finite nonnegative number")
     if not actual or len(actual) != len(expected):
         raise ValueError("Reference vectors must be nonempty and have equal lengths")
     for label, values in (("official", actual), ("Python", expected)):

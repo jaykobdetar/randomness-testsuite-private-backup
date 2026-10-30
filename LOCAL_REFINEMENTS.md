@@ -30,3 +30,18 @@ The four previously executed million-bit degenerate-sequence tests were delibera
 The earlier 311-test full run, wheel installation and source-archive validation apply to `2.0.1.dev0`; they are not claimed as full end-to-end checks of this follow-up. Packaging and other platform coverage have not been repeated. The same Python-minimum/dependency, Windows/macOS, large-file, calibration and provenance limitations remain. Conservative gating deliberately withholds some formerly available second-level fields; downstream consumers must accept null values and inspect reasons. Single-sequence p-values and decisions are unchanged.
 
 Keep the repository private during draft review. Clarify the inherited Google/AngularJS notice and provenance of history-less additions before release; no notice was replaced and no maintainer contact was made. Final reconciliation should target the existing public fork after review rather than introduce a competing public backup. Draft-PR approval does not authorize merging or publication.
+
+## Independent-review corrections — candidate 2.0.1.dev2
+
+Focused regressions reproduced two additional API edge cases at PR head `dbf2e48`: non-excursion `cycles`/`minimum_cycles` parameters could escape homogeneity checks and make inference depend on report order; NaN/infinite comparator tolerances could conceal real mismatches. The pre-fix focused selection had 12 failures and one passing control (45 unrelated tests deselected).
+
+The signature now ignores cycle metadata only for excursion families. Inference support is checked against every report, with deterministic combined reasons, rather than only the first. A channel with any `error` or `not_applicable` exclusion is descriptive-only: there is no established calibration for a potentially data-selected surviving subset. Other fully evaluated channels remain eligible. Regression tests exercise both input orders, both exclusion statuses, and unaffected channels.
+
+Reference tolerances must be finite, numeric, nonnegative and not Boolean; zero is supported for exact comparison. Both NaN and infinities now fail explicitly, without changing the default 5.1e-7 tolerance. Existing saved C results were not shown incorrect and remain untouched.
+
+Using the same single-thread, no-bytecode/no-pytest-cache settings documented above:
+
+- Python 3.12.3: `python -B -m pytest -q -p no:cacheprovider tests/test_review_refinements.py tests/test_suite.py -k 'not full_profile_handles'` — **157 passed, 4 deselected in 8.43 s**.
+- Python 3.14.7: `python -B -m pytest -q -p no:cacheprovider tests/test_review_refinements.py` — **55 passed, 3 skipped in 0.56s**; the three skips require tkinter.
+
+No full experiments, packaging checks or live GUI tests were repeated for dev2; the GUI code was unchanged. Original fixture and result files and all notices are preserved. `PROVENANCE.md` now records the verified upstream LICENSE addition commit and date while explicitly leaving ownership and later-addition provenance unresolved.

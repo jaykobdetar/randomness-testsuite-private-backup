@@ -10,6 +10,8 @@ The project continues that upstream Python implementation. The private snapshot 
 
 `LICENSE` is retained byte for byte. It matches the upstream repository's license at the verified commit: SHA-256 `f4fdecb45a48f627ba1134542bb14309fc868e64b14a0d1343d75f6e7d8ad444`. It contains the MIT terms and a Google/AngularJS copyright notice dated 2010–2019. That unusual notice is inherited, not introduced by this audit. Do not replace it with a new author notice or assume that its provenance is resolved. Before public release, establish the upstream licensing intent and provenance of local additions with the owner/maintainers. No maintainer contact has been made and no permission has been inferred from unrelated projects.
 
+The upstream commit [b63bf639c051b33a8dc0397702969c9c56751508](https://github.com/stevenang/randomness_testsuite/commit/b63bf639c051b33a8dc0397702969c9c56751508), dated 2019-12-12 03:36:10 UTC, adds `LICENSE` with this same Google/AngularJS notice. The commit diff and timestamp were checked during draft review. This establishes the notice's upstream inheritance; it does not establish copyright ownership, explain why that notice was used, or resolve the provenance of later additions.
+
 This is a factual provenance finding, not legal advice or a finding that the code is unlicensed.
 
 ## NIST fixtures

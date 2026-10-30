@@ -30,7 +30,7 @@ from TemplateMatching import TemplateMatching
 from Universal import Universal
 from Validation import InsufficientDataError, validate_bits
 
-VERSION = "2.0.1.dev1"
+VERSION = "2.0.1.dev2"
 INTERPRETATION = (
     "The null model is independent, equally probable bits. A p-value is not the "
     "probability that the source is random. Non-rejection does not prove physical "
@@ -344,6 +344,9 @@ def _validate_report_structure(report):
 
 def _batch_inference_reason(report, test_id, duplicates):
     # This is a conservative operating restriction, not proof of calibration.
+    row = next(row for row in report["results"] if row["test_id"] == test_id)
+    if row["status"] != "evaluated":
+        return "Calibration for a subset with excluded observations is not established (error or not_applicable)."
     if (report["schema_version"] != 1 or report["suite_version"] != VERSION
             or report["profile"] != "conservative-sp800-22-v1"
             or report["input"]["n_bits"] != 1000000 or report["alpha"] != 0.01):
@@ -363,7 +366,6 @@ def _batch_inference_reason(report, test_id, duplicates):
         "serial": {"pattern_length": 16}, "approximate_entropy": {"pattern_length": 10},
         "cusum_forward": {"mode": 0}, "cusum_backward": {"mode": 1},
     }
-    row = next(row for row in report["results"] if row["test_id"] == test_id)
     if row["parameters"] != parameters[test_id]:
         return "Parameters do not match the supported second-level regime."
     return ""
@@ -383,7 +385,8 @@ def summarize_reports(reports):
                 report["profile"], report["input"]["n_bits"],
                 tuple((row["test_id"], json.dumps(
                     {key: value for key, value in row["parameters"].items()
-                     if key not in ("cycles", "minimum_cycles")}, sort_keys=True, allow_nan=False))
+                     if not (row["test_id"] in ("random_excursions", "random_excursions_variant")
+                             and key in ("cycles", "minimum_cycles"))}, sort_keys=True, allow_nan=False))
                     for row in report["results"]))
     if any(signature(r) != signature(first) for r in reports):
         raise ValueError("Batch reports must have equal schema/suite versions, lengths, alpha, profile, test selection and parameters.")
@@ -396,7 +399,10 @@ def summarize_reports(reports):
     summaries = []
     for (test_id, channel), values in groups.items():
         item = {"test_id": test_id, "channel": channel, "excluded_sequences": len(reports) - len(values)}
-        reason = _batch_inference_reason(first, test_id, duplicates)
+        # Check every report, including excluded observations. Sort distinct
+        # reasons so changing input order cannot change support or explanations.
+        reasons = {_batch_inference_reason(report, test_id, duplicates) for report in reports}
+        reason = " ".join(sorted(reasons - {""}))
         item.update(summarize_p_values(values, first["alpha"], assume_calibrated=not reason))
         item["inference_reason"] = reason
         if reason:

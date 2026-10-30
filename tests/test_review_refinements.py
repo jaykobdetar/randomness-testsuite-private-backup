@@ -180,3 +180,50 @@ def test_gui_does_not_overwrite_input_snapshot(tmp_path, monkeypatch, alias):
     Main.Main.save_result_to_file(widget)
     import json
     assert json.loads(output.read_text()) == report
+
+
+@pytest.mark.parametrize("field", ["cycles", "minimum_cycles"])
+def test_nonexcursion_metadata_cannot_bypass_signature_in_either_order(field):
+    reports = batch(report_for(), 2)
+    reports[1]["results"][0]["parameters"][field] = 123
+    for ordered in (reports, reports[::-1]):
+        with pytest.raises(ValueError, match="parameters"):
+            Suite.summarize_reports(ordered)
+
+
+@pytest.mark.parametrize("status", ["error", "not_applicable"])
+def test_excluded_observations_disable_inference_independently_of_order(status):
+    reports = batch(report_for(), 56)
+    row = reports[-1]["results"][0]
+    row.update(status=status, p_values={}, decisions={}, reason="synthetic exclusion")
+    forward = Suite.summarize_reports(reports)
+    backward = Suite.summarize_reports(reports[::-1])
+    assert forward == backward
+    channel = forward["channels"][0]
+    assert_descriptive_only(channel)
+    assert channel["sequences"] == 55 and channel["excluded_sequences"] == 1
+    assert "excluded observations" in channel["inference_reason"]
+
+
+def test_exclusion_does_not_disable_unaffected_test_channels():
+    reports = batch(report_for(), 55)
+    for report in reports:
+        other = deepcopy(report["results"][0])
+        other.update(test_id="spectral")
+        report["results"].append(other)
+    reports[0]["results"][1].update(status="error", p_values={}, decisions={})
+    channels = {row["test_id"]: row for row in Suite.summarize_reports(reports)["channels"]}
+    assert channels["frequency"]["inference_supported"] is True
+    assert_descriptive_only(channels["spectral"])
+
+
+@pytest.mark.parametrize("tolerance", [float("nan"), float("inf"), -float("inf"), -.01, True, None, "0.1"])
+def test_reference_comparison_rejects_invalid_tolerance(tolerance):
+    with pytest.raises(ValueError, match="tolerance"):
+        compare_p_values([.1], [.9], tolerance=tolerance)
+
+
+def test_reference_comparison_accepts_zero_and_finite_tolerances():
+    assert compare_p_values([.1], [.1], tolerance=0) == []
+    assert compare_p_values([.1], [.9], tolerance=0) == [0]
+    assert compare_p_values([.1], [.9], tolerance=1.0) == []
