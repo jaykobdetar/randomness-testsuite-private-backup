@@ -1,4 +1,4 @@
-include SCIENTIFIC_NOTES.md PROVENANCE.md VALIDATION.md MILESTONES.md
+include SCIENTIFIC_NOTES.md PROVENANCE.md VALIDATION.md MILESTONES.md LOCAL_REFINEMENTS.md
 recursive-include data data.* *.json
 recursive-include tests *.py *.json
 recursive-include tools *.py

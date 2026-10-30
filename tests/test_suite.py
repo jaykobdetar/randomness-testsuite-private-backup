@@ -207,11 +207,11 @@ def test_integer_contract_does_not_silently_round_or_coerce(value):
 
 
 def test_second_level_uniformity_starts_at_55_and_keeps_one_in_last_bin():
-    below = Suite.summarize_p_values([0.5] * 54)
+    below = Suite.summarize_p_values([0.5] * 54, assume_calibrated=True)
     assert below["uniformity_p"] is None
     assert below["uniformity_not_rejected"] is None
     assert below["uniformity_reason"]
-    result = Suite.summarize_p_values([0.0] * 27 + [1.0] * 28)
+    result = Suite.summarize_p_values([0.0] * 27 + [1.0] * 28, assume_calibrated=True)
     assert result["sequences"] == 55
     assert result["uniformity_histogram"] == [27] + [0] * 8 + [28]
     assert result["non_rejections"] == 28
@@ -221,18 +221,18 @@ def test_second_level_uniformity_starts_at_55_and_keeps_one_in_last_bin():
 
 
 def test_second_level_alpha_boundary_interval_and_exact_binomial_extreme():
-    result = Suite.summarize_p_values([0.049, 0.05, 1.0], alpha=0.05)
+    result = Suite.summarize_p_values([0.049, 0.05, 1.0], alpha=0.05, assume_calibrated=True)
     assert result["non_rejections"] == 2
     assert result["proportion"] == pytest.approx(2 / 3)
     radius = 3 * math.sqrt(0.05 * 0.95 / 3)
     assert result["nist_three_sigma_interval"] == pytest.approx([0.95 - radius, 1.0])
-    all_rejected = Suite.summarize_p_values([0.0] * 10, alpha=0.05)
+    all_rejected = Suite.summarize_p_values([0.0] * 10, alpha=0.05, assume_calibrated=True)
     assert all_rejected["excess_rejections_binomial_p"] == pytest.approx(0.05 ** 10, rel=1e-14)
 
 
 def test_second_level_decimal_boundaries_follow_nist_integer_bins():
     values = [0, .1, .2, .3, .4, .5, .6, .7, .8, .9, 1] * 5
-    result = Suite.summarize_p_values(values)
+    result = Suite.summarize_p_values(values, assume_calibrated=True)
     assert result["uniformity_histogram"] == [5] * 9 + [10]
     # Chi-square = 9*(5-5.5)^2/5.5 + (10-5.5)^2/5.5 = 45/11.
     from scipy.special import gammaincc
@@ -327,11 +327,11 @@ def test_batch_refuses_different_lengths_test_selections_or_parameters():
 def test_batch_allows_different_observed_excursion_cycle_counts(monkeypatch):
     monkeypatch.setattr(Suite.RandomExcursions, "cycle_count", lambda _: 500)
     monkeypatch.setattr(Suite.RandomExcursions, "variant_test",
-                        lambda _: [("-1", -1, 500, 0.5, True)])
+                        lambda _: [(f"{x:+d}", x, 500, 0.5, True) for x in Suite.RandomExcursions.VARIANT_STATES])
     original = Suite.run_suite("01" * 500000, tests=["random_excursions_variant"])
     changed = deepcopy(original)
     changed["results"][0]["parameters"]["cycles"] = 700
-    changed["input"]["sha256_ascii_bits"] = "different-sequence-digest"
+    changed["input"]["sha256_ascii_bits"] = "a" * 64
     summary = Suite.summarize_reports([original, changed])
     assert summary["channels"][0]["sequences"] == 2
     assert summary["duplicate_sequences"] == 0

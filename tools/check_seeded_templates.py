@@ -6,12 +6,23 @@ AlgorithmTesting outputs. Temporary input is removed even on failure.
 import argparse
 from hashlib import shake_256
 import json
+import math
 from pathlib import Path
 import subprocess
 import tempfile
 
 from Suite import _templates, summarize_p_values
 from TemplateMatching import TemplateMatching
+
+
+def compare_p_values(actual, expected, tolerance=5.1e-7):
+    """Validate both vectors before computing any tolerance comparisons."""
+    if not actual or len(actual) != len(expected):
+        raise ValueError("Reference vectors must be nonempty and have equal lengths")
+    for label, values in (("official", actual), ("Python", expected)):
+        if any(not math.isfinite(p) or not 0 <= p <= 1 for p in values):
+            raise ValueError(f"{label} vector contains a nonfinite or out-of-range p-value")
+    return [i for i, (a, b) in enumerate(zip(actual, expected)) if abs(a - b) > tolerance]
 
 
 def main():
@@ -41,7 +52,7 @@ def main():
     actual = [float(value) for value in (sts / "experiments/AlgorithmTesting/NonOverlappingTemplate/results.txt").read_text().split()]
     if len(actual) != len(expected):
         raise ValueError(f"Expected {len(expected)} reference results, got {len(actual)}")
-    mismatches = [i for i, (a, b) in enumerate(zip(actual, expected)) if abs(a - b) > 5.1e-7]
+    mismatches = compare_p_values(actual, expected)
     index = templates.index("000110111")
     output = {"sequences": 64, "templates": 148, "comparisons": len(actual),
               "reference": "NIST STS 2.1.2; source hashes in tests/fixtures/nist_sts_2_1_2.json",
@@ -51,10 +62,10 @@ def main():
               "inspected_channel": "000110111",
               "official_p_values": actual[index::148],
               "python_p_values": expected[index::148],
-              "official_summary": summarize_p_values(actual[index::148]),
-              "python_summary": summarize_p_values(expected[index::148])}
+              "official_summary": summarize_p_values(actual[index::148], assume_calibrated=True),
+              "python_summary": summarize_p_values(expected[index::148], assume_calibrated=True)}
     args.output.parent.mkdir(parents=True, exist_ok=True)
-    args.output.write_text(json.dumps(output, indent=2) + "\n")
+    args.output.write_text(json.dumps(output, indent=2, allow_nan=False) + "\n")
     return bool(mismatches)
 
 

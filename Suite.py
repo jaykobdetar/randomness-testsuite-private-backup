@@ -30,7 +30,7 @@ from TemplateMatching import TemplateMatching
 from Universal import Universal
 from Validation import InsufficientDataError, validate_bits
 
-VERSION = "2.0.1.dev0"
+VERSION = "2.0.1.dev1"
 INTERPRETATION = (
     "The null model is independent, equally probable bits. A p-value is not the "
     "probability that the source is random. Non-rejection does not prove physical "
@@ -245,13 +245,19 @@ def run_suite(binary_data, tests=None, alpha=0.01, progress=None):
     }
 
 
-def summarize_p_values(p_values, alpha=0.01):
+def summarize_p_values(p_values, alpha=0.01, *, assume_calibrated=False):
     """Second-level diagnostics for independent sequences of ONE test channel.
 
     Never pool different tests, states or templates. This API cannot establish
     independence of submitted sequences. The 3-sigma interval is the NIST
     approximation, not a confidence interval for an unknown physical entropy.
+    By default return descriptive counts only: p-values alone cannot identify
+    their calibration or sampling regime. Explicit ``assume_calibrated=True``
+    asserts independent uniform null p-values and nominal rejection rate alpha;
+    it does not verify these assumptions. Prefer summarize_reports for gating.
     """
+    if not isinstance(assume_calibrated, bool):
+        raise TypeError("assume_calibrated must be a boolean")
     _validate_alpha(alpha)
     values = np.asarray(list(p_values), dtype=float)
     if values.ndim != 1 or len(values) == 0 or not np.all(np.isfinite(values)) or np.any((values < 0) | (values > 1)):
@@ -264,18 +270,103 @@ def summarize_p_values(p_values, alpha=0.01):
     # edges can round upward (e.g. 0.3), misclassifying exact decimal inputs.
     histogram = np.bincount(np.minimum((10 * values).astype(int), 9), minlength=10)
     uniformity = None
-    if count >= 55:
+    if assume_calibrated and count >= 55:
         chi2 = float(np.sum((histogram - count / 10) ** 2 / (count / 10)))
         uniformity = float(gammaincc(9 / 2, chi2 / 2))
     return {
         "sequences": count, "non_rejections": passes, "proportion": passes / count,
-        "nist_three_sigma_interval": interval,
-        "proportion_in_interval": interval[0] <= passes / count <= interval[1],
-        "excess_rejections_binomial_p": float(binomtest(count - passes, count, alpha, alternative="greater").pvalue),
+        "nist_three_sigma_interval": interval if assume_calibrated else None,
+        "proportion_in_interval": interval[0] <= passes / count <= interval[1] if assume_calibrated else None,
+        "excess_rejections_binomial_p": float(binomtest(count - passes, count, alpha, alternative="greater").pvalue) if assume_calibrated else None,
         "uniformity_histogram": histogram.tolist(), "uniformity_p": uniformity,
         "uniformity_not_rejected": None if uniformity is None else uniformity >= 0.0001,
-        "uniformity_reason": "At least 55 eligible independent sequences required." if uniformity is None else "",
+        "inference_supported": assume_calibrated,
+        "inference_reason": "" if assume_calibrated else "Calibration and independence are not established from p-values alone.",
+        "uniformity_reason": ("Calibration and independence are not established from p-values alone."
+                              if not assume_calibrated else
+                              "At least 55 eligible independent sequences required." if uniformity is None else ""),
     }
+
+
+def _validate_report_structure(report):
+    """Reject malformed observations before comparing or pooling reports."""
+    try:
+        if not isinstance(report, dict):
+            raise ValueError("report must be an object")
+        _validate_alpha(report["alpha"])
+        n = report["input"]["n_bits"]
+        if isinstance(n, bool) or not isinstance(n, int) or n <= 0:
+            raise ValueError("n_bits must be a positive integer")
+        digest = report["input"]["sha256_ascii_bits"]
+        if not isinstance(digest, str) or len(digest) != 64 or any(c not in "0123456789abcdef" for c in digest):
+            raise ValueError("invalid input SHA-256")
+        rows = report["results"]
+        if not isinstance(rows, list) or not rows:
+            raise ValueError("results must be a nonempty list")
+        seen = set()
+        for row in rows:
+            key = row["test_id"]
+            if not isinstance(key, str) or key not in TEST_NAMES or key in seen:
+                raise ValueError("results must have unique, known test IDs")
+            seen.add(key)
+            if not isinstance(row["parameters"], dict):
+                raise ValueError("parameters must be an object")
+            if row["n_bits"] != n or row["alpha"] != report["alpha"]:
+                raise ValueError("result length/alpha differs from report")
+            status, values, decisions = row["status"], row["p_values"], row["decisions"]
+            if status not in ("evaluated", "not_applicable", "error"):
+                raise ValueError("unknown result status")
+            if not isinstance(values, dict) or not isinstance(decisions, dict):
+                raise ValueError("p_values and decisions must be objects")
+            if status != "evaluated":
+                if values or decisions:
+                    raise ValueError("unevaluated results must have no p-values or decisions")
+                continue
+            channels = ({"delta1", "delta2"} if key == "serial" else
+                        set(_templates()) if key == "non_overlapping_template" else
+                        {f"{x:+d}" for x in RandomExcursions.STATES} if key == "random_excursions" else
+                        {f"{x:+d}" for x in RandomExcursions.VARIANT_STATES} if key == "random_excursions_variant" else {"p"})
+            if set(values) != channels or set(decisions) != channels:
+                raise ValueError("evaluated result must contain exactly the expected channels")
+            for channel, p in values.items():
+                if isinstance(p, bool) or not isinstance(p, (int, float)) or not math.isfinite(p) or not 0 <= p <= 1:
+                    raise ValueError("invalid p-value")
+                if decisions[channel] != ("reject" if p < report["alpha"] else "not_rejected"):
+                    raise ValueError("decision disagrees with p-value and alpha")
+        # Verify the fields used by signature even for a one-report batch.
+        if isinstance(report["schema_version"], bool) or not isinstance(report["schema_version"], int):
+            raise ValueError("invalid schema version")
+        if not all(isinstance(report[k], str) for k in ("suite_version", "profile")):
+            raise ValueError("invalid version/profile")
+    except (KeyError, TypeError) as exc:
+        raise ValueError("Malformed batch report") from exc
+
+
+def _batch_inference_reason(report, test_id, duplicates):
+    # This is a conservative operating restriction, not proof of calibration.
+    if (report["schema_version"] != 1 or report["suite_version"] != VERSION
+            or report["profile"] != "conservative-sp800-22-v1"
+            or report["input"]["n_bits"] != 1000000 or report["alpha"] != 0.01):
+        return "Second-level inference supports only current-profile 1,000,000-bit reports at alpha=0.01."
+    if duplicates:
+        return "Duplicate input hashes: independence is not established; inference is withheld."
+    if test_id in ("runs", "random_excursions", "random_excursions_variant"):
+        return "Second-level calibration after data-dependent applicability selection is not established."
+    parameters = {
+        "frequency": {}, "block_frequency": {"block_size": 10001, "blocks": 99},
+        "longest_run": {"block_size": 10000, "blocks": 100},
+        "matrix_rank": {"rows": 32, "columns": 32, "blocks": 976}, "spectral": {},
+        "non_overlapping_template": {"pattern_length": 9, "template_count": 148, "blocks": 8, "block_size": 125000},
+        "overlapping_template": {"pattern_size": 9, "block_size": 1032, "blocks": 968},
+        "universal": {"pattern_length": 7, "initialization_blocks": 1280, "test_blocks": 141577},
+        "linear_complexity": {"block_size": 500, "blocks": 2000},
+        "serial": {"pattern_length": 16}, "approximate_entropy": {"pattern_length": 10},
+        "cusum_forward": {"mode": 0}, "cusum_backward": {"mode": 1},
+    }
+    row = next(row for row in report["results"] if row["test_id"] == test_id)
+    if row["parameters"] != parameters[test_id]:
+        return "Parameters do not match the supported second-level regime."
+    return ""
 
 
 def summarize_reports(reports):
@@ -283,7 +374,10 @@ def summarize_reports(reports):
     reports = list(reports)
     if not reports:
         raise ValueError("reports must not be empty")
+    for report in reports:
+        _validate_report_structure(report)
     first = reports[0]
+    duplicates = len(reports) - len({r["input"]["sha256_ascii_bits"] for r in reports})
     def signature(report):
         return (report["schema_version"], report["suite_version"], report["alpha"],
                 report["profile"], report["input"]["n_bits"],
@@ -302,9 +396,12 @@ def summarize_reports(reports):
     summaries = []
     for (test_id, channel), values in groups.items():
         item = {"test_id": test_id, "channel": channel, "excluded_sequences": len(reports) - len(values)}
-        item.update(summarize_p_values(values, first["alpha"]))
+        reason = _batch_inference_reason(first, test_id, duplicates)
+        item.update(summarize_p_values(values, first["alpha"], assume_calibrated=not reason))
+        item["inference_reason"] = reason
+        if reason:
+            item["uniformity_reason"] = reason
         summaries.append(item)
-    duplicates = len(reports) - len({r["input"]["sha256_ascii_bits"] for r in reports})
     return {"sequences": len(reports), "duplicate_sequences": duplicates,
             "assumptions": "Requires independently obtained sequences from one stationary source. "
                            "Distinct hashes or disjoint segments do not establish independence. "

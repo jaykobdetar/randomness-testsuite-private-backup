@@ -34,3 +34,15 @@ def split_sequences(bits, sequence_length, discard_remainder=False):
     if remainder and not discard_remainder:
         raise ValueError(f"{remainder} trailing bits would be discarded; explicitly enable discard_remainder")
     return [bits[i * sequence_length:(i + 1) * sequence_length] for i in range(count)], remainder
+
+
+def require_distinct_output(source, output):
+    """Reject ordinary path, symlink and hard-link aliases before writing.
+
+    This is accidental-overwrite protection, not protection against concurrent
+    filesystem changes. A removed source need not prevent saving elsewhere.
+    """
+    source, output = Path(source), Path(output)
+    if (source.resolve() == output.resolve()
+            or (source.exists() and output.exists() and source.samefile(output))):
+        raise ValueError("output must not overwrite the input file")

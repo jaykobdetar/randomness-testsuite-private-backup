@@ -4,7 +4,7 @@ import argparse
 import json
 from pathlib import Path
 
-from BitInput import read_bits, split_sequences
+from BitInput import read_bits, split_sequences, require_distinct_output
 from Suite import INTERPRETATION, TEST_NAMES, run_suite, summarize_reports
 
 
@@ -28,9 +28,7 @@ def main(argv=None):
         parser.error("--format bytes applies only to file input")
     try:
         if args.file is not None and args.output is not None:
-            if (args.file.resolve() == args.output.resolve()
-                    or (args.output.exists() and args.file.samefile(args.output))):
-                parser.error("output must not overwrite the input file")
+            require_distinct_output(args.file, args.output)
         if args.file is not None:
             bits, source = read_bits(args.file, args.format)
         else:

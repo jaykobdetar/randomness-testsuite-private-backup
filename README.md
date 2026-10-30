@@ -2,7 +2,7 @@
 
 Statistical diagnostics of binary sequences based on the 15 families in NIST SP 800-22 Rev. 1a. The structured API, command line and Tk interface report up to 188 separate p-values, applicability, parameters and input hashes.
 
-**This is a private release candidate under review.** Non-rejection does not prove randomness, entropy, independence or cryptographic security. The tests use asymptotic approximations and do not provide an overall certification. Read [scientific notes](SCIENTIFIC_NOTES.md), [validation evidence](VALIDATION.md) and the unresolved [license/provenance review](PROVENANCE.md).
+**This is a private release candidate under review.** Non-rejection does not prove randomness, entropy, independence or cryptographic security. The tests use asymptotic approximations and do not provide an overall certification. Read [scientific notes](SCIENTIFIC_NOTES.md), [saved validation evidence](VALIDATION.md), [local follow-up checks](LOCAL_REFINEMENTS.md) and the unresolved [license/provenance review](PROVENANCE.md).
 
 ## Install
 
@@ -37,7 +37,9 @@ randomness-suite capture.bin --format bytes --sequence-length 1000000 --output b
 randomness-suite --bits 00110101 --tests frequency
 ```
 
-ASCII files may contain ASCII whitespace. Other characters are rejected. Packed bytes must be selected explicitly with `--format bytes`. An incomplete final sequence is an error unless `--discard-remainder` is supplied, and the discarded length is recorded. Reports cannot overwrite the input through the same path, a symlink or a hard link.
+ASCII files may contain ASCII whitespace. Other characters are rejected. Packed bytes must be selected explicitly with `--format bytes`. An incomplete final sequence is an error unless `--discard-remainder` is supplied, and the discarded length is recorded. The CLI and supported GUI refuse report destinations that alias their input path, including symlinks and hard links. This protects against accidental overwrites; concurrent filesystem changes are outside this check.
+
+Batch inference is restricted to the documented million-bit regime. Unsupported settings, duplicate inputs, and data-conditioned runs/excursion channels keep descriptive summaries with null inferential fields and an explanation. See the scientific notes for the raw p-value API’s explicit calibration assumption.
 
 CLI exit codes are 0 for a completed report, including statistical rejections or inapplicable tests; 1 for reported computation errors; and 2 for invalid input, arguments or file errors. Inspect result statuses, rather than treating exit 0 as statistical success. Reports include absolute source paths; review them before sharing.
 

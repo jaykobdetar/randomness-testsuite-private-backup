@@ -5,7 +5,7 @@ import threading
 import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
 
-from BitInput import read_bits
+from BitInput import read_bits, require_distinct_output
 from Suite import TEST_NAMES, run_suite
 from Validation import validate_bits
 
@@ -179,11 +179,14 @@ class Main(ttk.Frame):
         path = filedialog.asksaveasfilename(title="Save complete scientific report", defaultextension=".json", filetypes=[("JSON", "*.json")])
         if path:
             try:
+                source_path = self.report.get("source", {}).get("path")
+                if source_path is not None:
+                    require_distinct_output(source_path, path)
                 with open(path, "w", encoding="utf-8") as handle:
                     json.dump(self.report, handle, indent=2, allow_nan=False)
                     handle.write("\n")
                 self.status.set(f"Saved complete report to {path}")
-            except OSError as exc:
+            except (OSError, ValueError) as exc:
                 messagebox.showerror("Unable to save", str(exc))
 
 
