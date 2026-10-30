@@ -6,7 +6,7 @@ Statistical diagnostics of binary sequences based on the 15 families in NIST SP 
 
 ## Install
 
-Python 3.10+ is declared; see validation evidence for environments actually tested. NumPy and SciPy are installed as dependencies. In a virtual environment, from this checkout:
+Python 3.10+ is declared. The exact candidate passed its full suite on Python 3.10.22 with the minimum NumPy 1.24.0/SciPy 1.10.0 dependencies, and Python 3.12.3 with current dependencies; see [final-candidate evidence](LOCAL_REFINEMENTS.md#final-candidate-release-validation--exact-head-7b80af5). Tested platform: Linux x86_64. Windows and macOS are not validated. NumPy and SciPy are installed as dependencies. In a virtual environment, from this checkout:
 
 ```sh
 python -m venv .venv
