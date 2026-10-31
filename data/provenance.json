@@ -1,0 +1,27 @@
+{
+  "source_url": "https://csrc.nist.gov/CSRC/media/Projects/Random-Bit-Generation/documents/sts-2_1_2.zip",
+  "archive_sha256": "0238d2f1d26e120e3cc748ed2d4c674cdc636de37fc4027c76cc2a394fff9157",
+  "transformation": "Remove ASCII whitespace, retain first 1,000,000 bits, wrap at 100 columns with LF.",
+  "vectors": {
+    "e": {
+      "n_bits": 1000000,
+      "sha256_ascii_bits": "b5a3b3b457a180cd3c6054f49563c6e7a008e5f080fc2b00b94668c3d96245e3",
+      "official_file_sha256": "b4b49e2987dacdbd5fe75a8ad767f4139e7be7d8f0ff9ddfb23e6081a5feed2d"
+    },
+    "pi": {
+      "n_bits": 1000000,
+      "sha256_ascii_bits": "417539f94f4d570b0f5c9e655b2e7d5cbb652028bf28a31add155d73a560a34d",
+      "official_file_sha256": "8efe68d864d53540de7a7a3c54743cb0f47ffcd28b2950992519068474498823"
+    },
+    "sqrt2": {
+      "n_bits": 1000000,
+      "sha256_ascii_bits": "643e1a5463d3021c18006b20b7ebc43767322de2c753846167308e040017e854",
+      "official_file_sha256": "66e6fd40d1e7b14613801cdb8af67ee6b4fde988f348e0a09e7be84257ee3ed3"
+    },
+    "sqrt3": {
+      "n_bits": 1000000,
+      "sha256_ascii_bits": "0be6f9dbbcd5b77fd7f84ddede5dddf875f836503151b84e8988356031d50d72",
+      "official_file_sha256": "6b1fc9f59f701b4c75d013cb3854bcc545f971da057d8140a8d7600bd34850e0"
+    }
+  }
+}

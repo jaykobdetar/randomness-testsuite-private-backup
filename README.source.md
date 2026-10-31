@@ -1,3 +1,5 @@
+> Historical documentation preserved from the private snapshot. Paths, bundled lengths, CI statements and past verification claims may be stale. Use README.md and VALIDATION.md for the reviewed state.
+
 # Randomness test suite
 
 A scientific diagnostic tool for binary sequences, based on the 15 test families in NIST SP 800-22 Rev. 1a. The supported profile produces up to **188 separate p-values**, including all 148 length-nine non-overlapping templates and every excursion state.

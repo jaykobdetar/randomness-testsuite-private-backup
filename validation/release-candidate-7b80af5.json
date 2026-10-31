@@ -1,0 +1,122 @@
+{
+  "candidate_commit": "7b80af587f6e7ed021895b40ea6464f47bca6f07",
+  "version": "2.0.1.dev2",
+  "sdist_required_files_match": [
+    "LICENSE",
+    "SCIENTIFIC_NOTES.md",
+    "PROVENANCE.md",
+    "VALIDATION.md",
+    "LOCAL_REFINEMENTS.md",
+    "tools/reference_compare.py",
+    "tools/check_seeded_templates.py",
+    "tools/seeded_validation.py",
+    "tests/fixtures/nist_sts_2_1_2.json",
+    "tests/test_review_refinements.py",
+    "data/data.e",
+    "data/data.pi",
+    "data/data.sqrt2",
+    "data/data.sqrt3"
+  ],
+  "artifacts": {
+    "randomness-testsuite-2.0.1.dev2.tar.gz": "8709fc957f78458ecadb0be769425dde480cc8aa05b4427de2677719910cc8ef",
+    "randomness_testsuite-2.0.1.dev2-py3-none-any.whl": "6f21dffa0033c4bd4862258a9bc0cfa3a311034b629db1c0df4b3cdf0caa6516"
+  },
+  "validated_utc": "2026-10-30T08:17:01.953841+00:00",
+  "platform": "Linux x86_64; kernel 6.17.0-40-generic; glibc 2.39",
+  "isolation": "git archive of exact candidate into temporary directory; fresh virtual environments without system site-packages; wheel consumers run outside source checkout",
+  "resource_limits": {
+    "OPENBLAS_NUM_THREADS": "1",
+    "OMP_NUM_THREADS": "1",
+    "PYTHONDONTWRITEBYTECODE": "1",
+    "pytest_cache": "disabled"
+  },
+  "full_test_runs": [
+    {
+      "python": "3.12.3",
+      "source": "git archive of candidate",
+      "command": "xvfb-run -a python -B -m pytest -q -p no:cacheprovider",
+      "result": "369 passed in 25.01s"
+    },
+    {
+      "python": "3.10.22",
+      "source": "extracted built source archive",
+      "command": "xvfb-run -a python -B -m pytest -q -p no:cacheprovider",
+      "result": "369 passed in 23.46s"
+    }
+  ],
+  "installed_wheel_checks": [
+    {
+      "candidate_commit": "7b80af587f6e7ed021895b40ea6464f47bca6f07",
+      "python": "3.10.22",
+      "version": "2.0.1.dev2",
+      "module_location": "isolated environment site-packages",
+      "dependencies": {
+        "numpy": "1.24.0",
+        "scipy": "1.10.0",
+        "pytest": "7.0.0",
+        "setuptools": "79.0.1"
+      },
+      "checks": [
+        "README literal example",
+        "README full constant file/save example",
+        "README selected pi example",
+        "README Python API example",
+        "README packed bytes batch/save example",
+        "short batch nullable JSON fields",
+        "nullable excluded-channel API consumer and strict JSON",
+        "raw helper descriptive default"
+      ],
+      "pip_check": "No broken requirements found."
+    },
+    {
+      "candidate_commit": "7b80af587f6e7ed021895b40ea6464f47bca6f07",
+      "python": "3.12.3",
+      "version": "2.0.1.dev2",
+      "module_location": "isolated environment site-packages",
+      "dependencies": {
+        "numpy": "2.5.4",
+        "scipy": "1.18.1",
+        "pytest": "9.2.0",
+        "setuptools": "68.0.0"
+      },
+      "checks": [
+        "README literal example",
+        "README full constant file/save example",
+        "README selected pi example",
+        "README Python API example",
+        "README packed bytes batch/save example",
+        "short batch nullable JSON fields",
+        "nullable excluded-channel API consumer and strict JSON",
+        "raw helper descriptive default"
+      ],
+      "pip_check": "No broken requirements found."
+    }
+  ],
+  "build": {
+    "command": "python -B -m build --no-isolation --outdir DIST SOURCE",
+    "python": "3.12.3",
+    "setuptools": "68.0.0",
+    "build": "1.6.1",
+    "wheel": "0.48.0",
+    "result": "sdist and wheel built successfully",
+    "warnings": [
+      "setuptools 68 labels pyproject tool configuration beta",
+      "byte compilation intentionally disabled"
+    ]
+  },
+  "gui_entrypoint": "Installed Main module executed as __main__ under Xvfb, closed via scheduled Tk destroy after 150ms; Python 3.12.3",
+  "downstream_nullable_fields": "Short batches, data-conditioned channels and synthetic computation-error exclusions serialize explicit JSON nulls and reasons; a null-aware consumer renders unavailable rather than a pass/fail conclusion. Supported frequency channel retains eligible inference and omits uniformity with fewer than 55 observations.",
+  "not_repeated": [
+    "64-sequence statistical experiment",
+    "NIST C reference regeneration",
+    "9472-template C comparison"
+  ],
+  "remaining_limits": [
+    "Windows and macOS unvalidated",
+    "No full candidate runs on Python 3.11/3.13/3.14",
+    "Python 3.10.0 patch release not tested; minimum minor tested at 3.10.22",
+    "Other dependency combinations and architectures unvalidated",
+    "No general calibration, entropy or cryptographic security certification",
+    "License intent and provenance of history-less additions unresolved"
+  ]
+}
